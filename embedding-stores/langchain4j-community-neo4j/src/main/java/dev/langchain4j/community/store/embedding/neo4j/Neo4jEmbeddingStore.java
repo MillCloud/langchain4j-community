@@ -131,7 +131,7 @@ public class Neo4jEmbeddingStore implements EmbeddingStore<TextSegment> {
     private final String sanitizedLabel;
     private final String textProperty;
     private final String retrievalQuery;
-    private String entityCreationQuery;
+    private final String entityCreationQuery;
     private final Set<String> notMetaKeys;
     private Map<String, Object> additionalParams;
 
@@ -282,10 +282,6 @@ public class Neo4jEmbeddingStore implements EmbeddingStore<TextSegment> {
         this.additionalParams = additionalParams;
     }
 
-    public void setEntityCreationQuery(final String entityCreationQuery) {
-        this.entityCreationQuery = entityCreationQuery;
-    }
-
     /*
     Methods with `@Override`
     */
@@ -402,7 +398,7 @@ public class Neo4jEmbeddingStore implements EmbeddingStore<TextSegment> {
     /*
     Private methods
     */
-    private EmbeddingSearchResult<TextSegment> getSearchResUsingVectorSimilarity(
+    private EmbeddingSearchResult getSearchResUsingVectorSimilarity(
             EmbeddingSearchRequest request, Filter filter, Value embeddingValue, Session session) {
         /* Build an
             CYPHER runtime = parallel parallelRuntimeSupport=all
@@ -639,9 +635,9 @@ public class Neo4jEmbeddingStore implements EmbeddingStore<TextSegment> {
             if (!resIndex.hasNext()) {
                 return false;
             }
-            Record singleRecord = resIndex.single();
-            List<String> idxLabels = singleRecord.get("labelsOrTypes").asList(Value::asString);
-            List<Object> idxProps = singleRecord.get("properties").asList();
+            Record record = resIndex.single();
+            List<String> idxLabels = record.get("labelsOrTypes").asList(Value::asString);
+            List<Object> idxProps = record.get("properties").asList();
 
             boolean isIndexDifferent = !idxLabels.equals(singletonList(this.label))
                     || !idxProps.equals(singletonList(this.embeddingProperty));
@@ -785,7 +781,8 @@ public class Neo4jEmbeddingStore implements EmbeddingStore<TextSegment> {
         }
 
         /**
-         * @param entityCreationQuery the optional entity creation query (default: {@link Neo4jEmbeddingStore#ENTITIES_CREATION})
+         * @param entityCreationQuery    the optional entity creation query (default: {@link Neo4jEmbeddingStore#ENTITIES_CREATION})
+         *
          */
         public Builder entityCreationQuery(String entityCreationQuery) {
             this.entityCreationQuery = entityCreationQuery;

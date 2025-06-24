@@ -2,7 +2,6 @@ package dev.langchain4j.community.model.xinference;
 
 import static dev.langchain4j.community.model.xinference.InternalXinferenceHelper.toTools;
 import static dev.langchain4j.community.model.xinference.InternalXinferenceHelper.toXinferenceMessages;
-import static dev.langchain4j.internal.Utils.copy;
 import static dev.langchain4j.internal.Utils.getOrDefault;
 import static dev.langchain4j.internal.Utils.isNotNullOrEmpty;
 import static dev.langchain4j.internal.Utils.isNullOrEmpty;
@@ -39,15 +38,18 @@ public class XinferenceStreamingChatModel implements StreamingChatModel {
     private static final Logger log = LoggerFactory.getLogger(XinferenceStreamingChatModel.class);
 
     private final XinferenceClient client;
-    private final List<ChatModelListener> listeners;
-    private final ChatRequestParameters defaultRequestParameters;
-
-    /* TODO: support custom ChatRequestParameters */
-
+    private final String modelName;
+    private final Double temperature;
+    private final Double topP;
+    private final List<String> stop;
+    private final Integer maxTokens;
+    private final Double presencePenalty;
+    private final Double frequencyPenalty;
     private final Integer seed;
     private final String user;
     private final Object toolChoice;
     private final Boolean parallelToolCalls;
+    private final List<ChatModelListener> listeners;
 
     public XinferenceStreamingChatModel(
             String baseUrl,
@@ -70,7 +72,6 @@ public class XinferenceStreamingChatModel implements StreamingChatModel {
             Map<String, String> customHeaders,
             List<ChatModelListener> listeners) {
         timeout = getOrDefault(timeout, Duration.ofSeconds(60));
-        this.listeners = copy(listeners);
 
         this.client = XinferenceClient.builder()
                 .baseUrl(baseUrl)
@@ -84,30 +85,19 @@ public class XinferenceStreamingChatModel implements StreamingChatModel {
                 .logStreamingResponses(logResponses)
                 .customHeaders(customHeaders)
                 .build();
-        this.defaultRequestParameters = ChatRequestParameters.builder()
-                .modelName(ensureNotBlank(modelName, "modelName"))
-                .temperature(temperature)
-                .topP(topP)
-                .stopSequences(stop)
-                .maxOutputTokens(maxTokens)
-                .presencePenalty(presencePenalty)
-                .frequencyPenalty(frequencyPenalty)
-                .build();
 
+        this.modelName = ensureNotBlank(modelName, "modelName");
+        this.temperature = temperature;
+        this.topP = topP;
+        this.stop = stop;
+        this.maxTokens = maxTokens;
+        this.presencePenalty = presencePenalty;
+        this.frequencyPenalty = frequencyPenalty;
         this.seed = seed;
         this.user = user;
         this.toolChoice = toolChoice;
         this.parallelToolCalls = parallelToolCalls;
-    }
-
-    @Override
-    public ChatRequestParameters defaultRequestParameters() {
-        return defaultRequestParameters;
-    }
-
-    @Override
-    public List<ChatModelListener> listeners() {
-        return listeners;
+        this.listeners = getOrDefault(listeners, List.of());
     }
 
     @Override
@@ -117,14 +107,14 @@ public class XinferenceStreamingChatModel implements StreamingChatModel {
         List<ToolSpecification> toolSpecifications = parameters.toolSpecifications();
         ChatCompletionRequest.Builder builder = ChatCompletionRequest.builder().stream(true)
                 .streamOptions(StreamOptions.of(true))
-                .model(parameters.modelName())
+                .model(modelName)
                 .messages(toXinferenceMessages(messages))
-                .temperature(parameters.temperature())
-                .topP(parameters.topP())
-                .stop(parameters.stopSequences())
-                .maxTokens(parameters.maxOutputTokens())
-                .presencePenalty(parameters.presencePenalty())
-                .frequencyPenalty(parameters.frequencyPenalty())
+                .temperature(temperature)
+                .topP(topP)
+                .stop(stop)
+                .maxTokens(maxTokens)
+                .presencePenalty(presencePenalty)
+                .frequencyPenalty(frequencyPenalty)
                 .user(user)
                 .seed(seed)
                 .toolChoice(toolChoice)

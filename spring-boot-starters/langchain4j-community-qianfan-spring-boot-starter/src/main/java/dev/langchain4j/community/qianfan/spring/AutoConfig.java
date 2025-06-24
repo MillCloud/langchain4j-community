@@ -33,9 +33,6 @@ public class AutoConfig {
                 .maxRetries(chatModelProperties.getMaxRetries())
                 .logRequests(chatModelProperties.getLogRequests())
                 .logResponses(chatModelProperties.getLogResponses())
-                .userId(chatModelProperties.getUserId())
-                .maxOutputTokens(chatModelProperties.getMaxOutputTokens())
-                .stop(chatModelProperties.getStop())
                 .build();
     }
 
@@ -55,9 +52,6 @@ public class AutoConfig {
                 .responseFormat(chatModelProperties.getResponseFormat())
                 .logRequests(chatModelProperties.getLogRequests())
                 .logResponses(chatModelProperties.getLogResponses())
-                .userId(chatModelProperties.getUserId())
-                .maxOutputTokens(chatModelProperties.getMaxOutputTokens())
-                .stop(chatModelProperties.getStop())
                 .build();
     }
 

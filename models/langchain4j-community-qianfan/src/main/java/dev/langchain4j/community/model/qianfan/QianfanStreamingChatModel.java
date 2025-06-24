@@ -1,12 +1,7 @@
 package dev.langchain4j.community.model.qianfan;
 
 import static dev.langchain4j.community.model.qianfan.InternalQianfanHelper.getSystemMessage;
-import static dev.langchain4j.community.model.qianfan.QianfanChatModelNameEnum.fromModelName;
-import static dev.langchain4j.internal.InternalStreamingChatResponseHandlerUtils.withLoggingExceptions;
-import static dev.langchain4j.internal.Utils.copy;
 import static dev.langchain4j.internal.Utils.getOrDefault;
-import static dev.langchain4j.internal.Utils.isNullOrBlank;
-import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 import static dev.langchain4j.spi.ServiceHelper.loadFactories;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -16,12 +11,9 @@ import dev.langchain4j.community.model.qianfan.client.chat.ChatCompletionRequest
 import dev.langchain4j.community.model.qianfan.client.chat.ChatCompletionResponse;
 import dev.langchain4j.community.model.qianfan.spi.QianfanStreamingChatModelBuilderFactory;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.internal.ExceptionMapper;
+import dev.langchain4j.internal.Utils;
 import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.request.ChatRequestParameters;
-import dev.langchain4j.model.chat.request.ResponseFormat;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import java.net.Proxy;
@@ -34,14 +26,13 @@ import java.util.Objects;
 public class QianfanStreamingChatModel implements StreamingChatModel {
 
     private final QianfanClient client;
-    private final List<ChatModelListener> listeners;
-
-    private final ChatRequestParameters defaultRequestParameters;
-
-    /* TODO: we need QianfanChatRequestParameters to customize parameters */
-
+    private final String baseUrl;
+    private final Double temperature;
+    private final Double topP;
+    private final String modelName;
     private final String endpoint;
-    private final String userId;
+    private final Double penaltyScore;
+    private final String responseFormat;
 
     public QianfanStreamingChatModel(
             String baseUrl,
@@ -55,71 +46,50 @@ public class QianfanStreamingChatModel implements StreamingChatModel {
             Double penaltyScore,
             Boolean logRequests,
             Boolean logResponses,
-            String userId,
-            List<String> stop,
-            Integer maxOutputTokens,
-            Proxy proxy,
-            List<ChatModelListener> listeners) {
-        if (isNullOrBlank(apiKey) || isNullOrBlank(secretKey)) {
+            Proxy proxy) {
+        if (Utils.isNullOrBlank(apiKey) || Utils.isNullOrBlank(secretKey)) {
             throw new IllegalArgumentException(
                     " api key and secret key must be defined. It can be generated here: https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application");
         }
+        this.modelName = modelName;
+        this.endpoint = Utils.isNullOrBlank(endpoint) ? QianfanChatModelNameEnum.fromModelName(modelName) : endpoint;
 
-        this.endpoint = isNullOrBlank(endpoint) ? fromModelName(modelName) : endpoint;
-        if (isNullOrBlank(this.endpoint)) {
+        if (Utils.isNullOrBlank(this.endpoint)) {
             throw new IllegalArgumentException(
-                    "Qianfan does not have such model name. You can see model name here: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu");
+                    "Qianfan is no such model name(or there is no model definition in the QianfanChatModelNameEnum class). You can see model name here: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu");
         }
 
-        this.listeners = copy(listeners);
+        this.baseUrl = getOrDefault(baseUrl, "https://aip.baidubce.com");
         this.client = QianfanClient.builder()
-                .baseUrl(getOrDefault(baseUrl, "https://aip.baidubce.com"))
+                .baseUrl(this.baseUrl)
                 .apiKey(apiKey)
                 .secretKey(secretKey)
                 .logRequests(logRequests)
-                .logResponses(logResponses)
+                .logStreamingResponses(logResponses)
                 .proxy(proxy)
                 .build();
-        this.defaultRequestParameters = ChatRequestParameters.builder()
-                .temperature(temperature)
-                .topP(topP)
-                .stopSequences(stop)
-                .modelName(ensureNotNull(modelName, "modelName"))
-                .maxOutputTokens(maxOutputTokens)
-                .responseFormat("json_object".equals(responseFormat) ? ResponseFormat.JSON : ResponseFormat.TEXT)
-                .presencePenalty(penaltyScore)
-                .build();
-
-        this.userId = userId;
-    }
-
-    @Override
-    public ChatRequestParameters defaultRequestParameters() {
-        return defaultRequestParameters;
-    }
-
-    @Override
-    public List<ChatModelListener> listeners() {
-        return listeners;
+        this.temperature = getOrDefault(temperature, 0.7);
+        this.topP = topP;
+        this.penaltyScore = penaltyScore;
+        this.responseFormat = responseFormat;
     }
 
     @Override
     public void doChat(ChatRequest chatRequest, StreamingChatResponseHandler handler) {
-        List<ChatMessage> messages = chatRequest.messages();
-        List<ToolSpecification> toolSpecifications = chatRequest.toolSpecifications();
-        ChatRequestParameters parameters = chatRequest.parameters();
+        generate(chatRequest.messages(), chatRequest.toolSpecifications(), handler);
+    }
 
+    private void generate(
+            List<ChatMessage> messages,
+            List<ToolSpecification> toolSpecifications,
+            StreamingChatResponseHandler handler) {
         ChatCompletionRequest.Builder builder = ChatCompletionRequest.builder()
                 .messages(InternalQianfanHelper.toOpenAiMessages(messages))
-                .temperature(parameters.temperature())
-                .topP(parameters.topP())
-                .maxOutputTokens(parameters.maxOutputTokens())
-                .stop(parameters.stopSequences())
-                .stream(true)
+                .temperature(temperature)
+                .topP(topP)
                 .system(getSystemMessage(messages))
-                .userId(userId)
-                .responseFormat(parameters.responseFormat() == ResponseFormat.JSON ? "json_object" : "text")
-                .penaltyScore(parameters.presencePenalty());
+                .responseFormat(responseFormat)
+                .penaltyScore(penaltyScore);
 
         if (toolSpecifications != null && !toolSpecifications.isEmpty()) {
             builder.functions(InternalQianfanHelper.toFunctions(toolSpecifications));
@@ -132,27 +102,14 @@ public class QianfanStreamingChatModel implements StreamingChatModel {
         SyncOrAsyncOrStreaming<ChatCompletionResponse> response = client.chatCompletion(request, endpoint);
 
         response.onPartialResponse(partialResponse -> {
-                    try {
-                        responseBuilder.append(partialResponse);
-                        handle(partialResponse, handler);
-                    } catch (Throwable t) {
-                        RuntimeException mappedException = ExceptionMapper.DEFAULT.mapException(t);
-                        withLoggingExceptions(() -> handler.onError(mappedException));
-                    }
+                    responseBuilder.append(partialResponse);
+                    handle(partialResponse, handler);
                 })
                 .onComplete(() -> {
-                    try {
-                        ChatResponse chatResponse = responseBuilder.build();
-                        handler.onCompleteResponse(chatResponse);
-                    } catch (Throwable t) {
-                        RuntimeException mappedException = ExceptionMapper.DEFAULT.mapException(t);
-                        withLoggingExceptions(() -> handler.onError(mappedException));
-                    }
+                    ChatResponse chatResponse = responseBuilder.build();
+                    handler.onCompleteResponse(chatResponse);
                 })
-                .onError(throwable -> {
-                    RuntimeException mappedException = ExceptionMapper.DEFAULT.mapException(throwable);
-                    withLoggingExceptions(() -> handler.onError(mappedException));
-                })
+                .onError(handler::onError)
                 .execute();
     }
 
@@ -185,11 +142,7 @@ public class QianfanStreamingChatModel implements StreamingChatModel {
         private Double penaltyScore;
         private Boolean logRequests;
         private Boolean logResponses;
-        private String userId;
-        private List<String> stop;
-        private Integer maxOutputTokens;
         private Proxy proxy;
-        private List<ChatModelListener> listeners;
 
         public QianfanStreamingChatModelBuilder() {
             // This is public so it can be extended
@@ -251,28 +204,8 @@ public class QianfanStreamingChatModel implements StreamingChatModel {
             return this;
         }
 
-        public QianfanStreamingChatModelBuilder userId(String userId) {
-            this.userId = userId;
-            return this;
-        }
-
-        public QianfanStreamingChatModelBuilder stop(List<String> stop) {
-            this.stop = stop;
-            return this;
-        }
-
-        public QianfanStreamingChatModelBuilder maxOutputTokens(Integer maxOutputTokens) {
-            this.maxOutputTokens = maxOutputTokens;
-            return this;
-        }
-
         public QianfanStreamingChatModelBuilder proxy(Proxy proxy) {
             this.proxy = proxy;
-            return this;
-        }
-
-        public QianfanStreamingChatModelBuilder listeners(List<ChatModelListener> listeners) {
-            this.listeners = listeners;
             return this;
         }
 
@@ -289,11 +222,7 @@ public class QianfanStreamingChatModel implements StreamingChatModel {
                     penaltyScore,
                     logRequests,
                     logResponses,
-                    userId,
-                    stop,
-                    maxOutputTokens,
-                    proxy,
-                    listeners);
+                    proxy);
         }
     }
 }

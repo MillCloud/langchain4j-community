@@ -15,12 +15,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class HybridSearchIT {
-    
-    private static final Logger log = LoggerFactory.getLogger(HybridSearchIT.class);
 
     private static final TextEmbedding[] hits = {
         TextEmbedding.fromResource("hitDoc1.txt"),
@@ -124,10 +120,10 @@ class HybridSearchIT {
     }
 
     private void debugQuery(TextEmbedding query, List<Content> results) {
-        log.info("\n>> {}\n", query.text().text());
+        System.out.printf("%n>> %s%n", query.text().text());
         for (Content content : results) {
-            log.info(
-                    "{} {}\n",
+            System.out.printf(
+                    "%f %s%n",
                     content.metadata().get(ContentMetadata.SCORE),
                     content.textSegment().text());
         }

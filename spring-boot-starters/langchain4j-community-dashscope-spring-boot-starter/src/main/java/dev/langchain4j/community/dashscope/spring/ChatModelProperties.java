@@ -144,7 +144,6 @@ public class ChatModelProperties {
         private Boolean supportIncrementalOutput;
         private Boolean enableThinking;
         private Integer thinkingBudget;
-        private Boolean enableSanitizeMessages;
 
         public String getModelName() {
             return modelName;
@@ -296,14 +295,6 @@ public class ChatModelProperties {
 
         public void setThinkingBudget(Integer thinkingBudget) {
             this.thinkingBudget = thinkingBudget;
-        }
-
-        public Boolean getEnableSanitizeMessages() {
-            return enableSanitizeMessages;
-        }
-
-        public void setEnableSanitizeMessages(Boolean enableSanitizeMessages) {
-            this.enableSanitizeMessages = enableSanitizeMessages;
         }
     }
 

@@ -18,7 +18,6 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.TestStreamingChatResponseHandler;
 import dev.langchain4j.model.chat.common.AbstractStreamingChatModelIT;
-import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -233,17 +232,5 @@ class QianfanStreamingChatModelIT extends AbstractStreamingChatModelIT {
     @Override
     protected boolean supportsMaxOutputTokensParameter() {
         return false; // TODO
-    }
-
-    @Override
-    public StreamingChatModel createModelWith(ChatModelListener chatModelListener) {
-        return QianfanStreamingChatModel.builder()
-                .modelName("ERNIE-Bot 4.0")
-                .temperature(0.7)
-                .topP(1.0)
-                .apiKey(apiKey)
-                .secretKey(secretKey)
-                .listeners(singletonList(chatModelListener))
-                .build();
     }
 }

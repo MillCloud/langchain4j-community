@@ -65,11 +65,6 @@ public class QwenChatRequestParameters extends DefaultChatRequestParameters {
      */
     private final Integer thinkingBudget;
     /**
-     * Specifies whether to sanitize messages before sending to llm provider.
-     * Default value is true.
-     */
-    private final Boolean enableSanitizeMessages;
-    /**
      * User-defined parameters. They may have special effects on some special models.
      */
     private final Map<String, Object> custom;
@@ -85,7 +80,6 @@ public class QwenChatRequestParameters extends DefaultChatRequestParameters {
         this.supportIncrementalOutput = builder.supportIncrementalOutput;
         this.enableThinking = getOrDefault(builder.enableThinking, Boolean.FALSE);
         this.thinkingBudget = builder.thinkingBudget;
-        this.enableSanitizeMessages = getOrDefault(builder.enableSanitizeMessages, Boolean.TRUE);
         this.custom = builder.custom;
     }
 
@@ -123,10 +117,6 @@ public class QwenChatRequestParameters extends DefaultChatRequestParameters {
 
     public Integer thinkingBudget() {
         return thinkingBudget;
-    }
-
-    public Boolean enableSanitizeMessages() {
-        return enableSanitizeMessages;
     }
 
     public Map<String, Object> custom() {
@@ -202,7 +192,6 @@ public class QwenChatRequestParameters extends DefaultChatRequestParameters {
         private Boolean supportIncrementalOutput;
         private Boolean enableThinking;
         private Integer thinkingBudget;
-        private Boolean enableSanitizeMessages;
         private Map<String, Object> custom;
 
         @Override
@@ -216,7 +205,6 @@ public class QwenChatRequestParameters extends DefaultChatRequestParameters {
                 vlHighResolutionImages(getOrDefault(qwenParameters.vlHighResolutionImages(), vlHighResolutionImages));
                 enableThinking(getOrDefault(qwenParameters.enableThinking(), enableThinking));
                 thinkingBudget(getOrDefault(qwenParameters.thinkingBudget(), thinkingBudget));
-                enableSanitizeMessages(getOrDefault(qwenParameters.enableSanitizeMessages(), enableSanitizeMessages));
                 custom(getOrDefault(qwenParameters.custom(), custom));
             }
             return this;
@@ -264,11 +252,6 @@ public class QwenChatRequestParameters extends DefaultChatRequestParameters {
 
         public Builder thinkingBudget(Integer thinkingBudget) {
             this.thinkingBudget = thinkingBudget;
-            return this;
-        }
-
-        public Builder enableSanitizeMessages(Boolean enableSanitizeMessages) {
-            this.enableSanitizeMessages = enableSanitizeMessages;
             return this;
         }
 

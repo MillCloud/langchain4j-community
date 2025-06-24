@@ -78,11 +78,10 @@ class QwenHelper {
 
     private static final Logger log = LoggerFactory.getLogger(QwenHelper.class);
 
-    static List<Message> toQwenMessages(List<ChatMessage> messages, Boolean enableSanitizeMessages) {
-        List<ChatMessage> inputMessages =
-                Boolean.FALSE.equals(enableSanitizeMessages) ? messages : sanitizeMessages(messages);
-
-        return inputMessages.stream().map(QwenHelper::toQwenMessage).collect(toList());
+    static List<Message> toQwenMessages(List<ChatMessage> messages) {
+        return sanitizeMessages(messages).stream()
+                .map(QwenHelper::toQwenMessage)
+                .collect(toList());
     }
 
     static List<Message> toQwenMessages(Iterable<ChatMessage> messages) {
@@ -565,10 +564,6 @@ class QwenHelper {
                     log.warn(
                             "Tool execution result should follow a tool execution request message. Drop duplicated message: {}",
                             removedMessage);
-                    if (acc.isEmpty()) {
-                        log.error("The first message should be a system/user message");
-                        throw new IllegalArgumentException("The first message should be a system/user message");
-                    }
                 }
             } else if (type == AI) {
                 while (!isInputMessageType(acc.getLast())) {
@@ -576,10 +571,6 @@ class QwenHelper {
                     log.warn(
                             "AI message should follow a user/tool_execution_result message. Drop duplicated message: {}",
                             removedMessage);
-                    if (acc.isEmpty()) {
-                        log.error("The first message should be a system/user message");
-                        throw new IllegalArgumentException("The first message should be a system/user message");
-                    }
                 }
             }
 
@@ -719,7 +710,7 @@ class QwenHelper {
                 .seed(parameters.seed())
                 .repetitionPenalty(frequencyPenaltyToRepetitionPenalty(parameters.frequencyPenalty()))
                 .maxTokens(parameters.maxOutputTokens())
-                .messages(toQwenMessages(chatRequest.messages(), parameters.enableSanitizeMessages()))
+                .messages(toQwenMessages(chatRequest.messages()))
                 .responseFormat(toQwenResponseFormat(parameters.responseFormat()))
                 .resultFormat(MESSAGE)
                 .incrementalOutput(incrementalOutput)

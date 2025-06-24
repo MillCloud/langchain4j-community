@@ -7,7 +7,6 @@ import static org.neo4j.cypherdsl.core.Cypher.not;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import dev.langchain4j.Internal;
 import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.comparison.IsEqualTo;
 import dev.langchain4j.store.embedding.filter.comparison.IsGreaterThan;
@@ -30,12 +29,9 @@ import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.driver.internal.value.ListValue;
 import org.neo4j.driver.internal.value.PointValue;
 
-@Internal
-class Neo4jFilterMapper {
+public class Neo4jFilterMapper {
 
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    static final String UNSUPPORTED_FILTER_TYPE_ERROR = "Unsupported filter type: ";
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static FunctionInvocation convertToPoint(PointValue value1) {
         try {
@@ -51,7 +47,7 @@ class Neo4jFilterMapper {
      * The {@link Cypher#literalOf(Object)} doesn't handle all data types,
      * so we use this method to transform non-managed data
      */
-    static Expression toCypherLiteral(Object value) {
+    public static Expression toCypherLiteral(Object value) {
         if (value instanceof OffsetDateTime) {
             return Cypher.datetime(literalOf(value.toString()));
         }
@@ -69,13 +65,15 @@ class Neo4jFilterMapper {
         return literalOf(value);
     }
 
-    private final Node node;
+    public static String UNSUPPORTED_FILTER_TYPE_ERROR = "Unsupported filter type: ";
 
-    Neo4jFilterMapper(Node node) {
+    private Node node;
+
+    public Neo4jFilterMapper(Node node) {
         this.node = node;
     }
 
-    Condition getCondition(Filter filter) {
+    public Condition getCondition(Filter filter) {
         if (filter instanceof IsEqualTo item) {
             Expression cypherLiteral = toCypherLiteral(item.key());
             Expression cypherLiteral1 = toCypherLiteral(item.comparisonValue());
@@ -116,13 +114,13 @@ class Neo4jFilterMapper {
         }
     }
 
-    Condition mapIn(IsIn filter) {
+    public Condition mapIn(IsIn filter) {
         Expression cypherLiteral = toCypherLiteral(filter.key());
         Expression cypherLiteral1 = toCypherLiteral(filter.comparisonValues());
         return Cypher.includesAny(node.property(cypherLiteral), cypherLiteral1);
     }
 
-    Condition mapNotIn(IsNotIn filter) {
+    public Condition mapNotIn(IsNotIn filter) {
         Expression cypherLiteral = toCypherLiteral(filter.key());
         Expression cypherLiteral1 = toCypherLiteral(filter.comparisonValues());
         Condition condition1 = Cypher.includesAny(node.property(cypherLiteral), cypherLiteral1);

@@ -26,7 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestorBaseTest {
+public class Neo4jEmbeddingRetrieverTest extends Neo4jEmbeddingStoreIngestorBaseTest {
 
     @Mock
     private ChatModel chatLanguageModel;
@@ -40,13 +40,13 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
         int maxSegmentSize = 250;
         DocumentSplitter splitter = new DocumentByRegexSplitter(expectedQuery, expectedQuery, maxSegmentSize, 0);
 
-        final ParentChildEmbeddingStoreIngestor ingestor = ParentChildEmbeddingStoreIngestor.builder()
+        final ParentChildEmbeddingStoreIngestor build = ParentChildEmbeddingStoreIngestor.builder()
                 .documentSplitter(splitter)
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
                 .build();
 
-        ingestor.ingest(parentDoc);
+        build.ingest(parentDoc);
 
         // Query and validate results
         final String retrieveQuery = "fundamental theory";
@@ -90,7 +90,7 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
         int maxSegmentSize = 250;
         DocumentSplitter splitter = new DocumentByRegexSplitter(expectedQuery, expectedQuery, maxSegmentSize, 0);
 
-        final Neo4jEmbeddingStoreIngestor ingestor = Neo4jEmbeddingStoreIngestor.builder()
+        final Neo4jEmbeddingStoreIngestor build = Neo4jEmbeddingStoreIngestor.builder()
                 .documentSplitter(splitter)
                 .embeddingStore(neo4jEmbeddingStore)
                 .embeddingModel(embeddingModel)
@@ -100,7 +100,7 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
                 .userPrompt("mock prompt user")
                 .systemPrompt("mock prompt system")
                 .build();
-        ingestor.ingest(parentDoc);
+        build.ingest(parentDoc);
         final String retrieveQuery = "naruto";
         List<Content> results = retriever.retrieve(Query.from(retrieveQuery));
         commonResults(results, retrieveQuery);
@@ -136,7 +136,7 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
         final String expectedQueryChild = "\\. ";
         DocumentSplitter childSplitter = new DocumentByRegexSplitter(expectedQueryChild, expectedQuery, 150, 0);
 
-        final Neo4jEmbeddingStoreIngestor ingestor = Neo4jEmbeddingStoreIngestor.builder()
+        final Neo4jEmbeddingStoreIngestor build = Neo4jEmbeddingStoreIngestor.builder()
                 .documentSplitter(parentSplitter)
                 .documentChildSplitter(childSplitter)
                 .driver(driver)
@@ -145,7 +145,7 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
                 .embeddingModel(embeddingModel)
                 .build();
         // Index the document into Neo4j as parent-child nodes
-        ingestor.ingest(doc);
+        build.ingest(doc);
 
         final String retrieveQuery = "Machine Learning";
         List<Content> results = retriever.retrieve(Query.from(retrieveQuery));
@@ -192,7 +192,7 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
         DocumentSplitter childSplitter =
                 new DocumentByRegexSplitter(expectedQueryChild, expectedQuery, maxSegmentSize, 0);
 
-        final Neo4jEmbeddingStoreIngestor ingestor = Neo4jEmbeddingStoreIngestor.builder()
+        final Neo4jEmbeddingStoreIngestor build = Neo4jEmbeddingStoreIngestor.builder()
                 .documentSplitter(parentSplitter)
                 .documentChildSplitter(childSplitter)
                 .driver(driver)
@@ -203,7 +203,7 @@ public class Neo4jEmbeddingStoreIngestorTest extends Neo4jEmbeddingStoreIngestor
                 .embeddingModel(embeddingModel)
                 .build();
         // Index the document into Neo4j as parent-child nodes
-        ingestor.ingest(doc);
+        build.ingest(doc);
 
         final String retrieveQuery = "Machine Learning";
         List<Content> results = retriever.retrieve(Query.from(retrieveQuery));

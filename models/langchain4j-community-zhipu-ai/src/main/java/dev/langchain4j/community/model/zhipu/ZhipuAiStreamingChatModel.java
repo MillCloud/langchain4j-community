@@ -55,7 +55,7 @@ public class ZhipuAiStreamingChatModel implements StreamingChatModel {
                 .logResponses(getOrDefault(logResponses, false))
                 .build();
         this.defaultRequestParameters = ChatRequestParameters.builder()
-                .temperature(temperature)
+                .temperature(getOrDefault(temperature, 0.7))
                 .topP(topP)
                 .stopSequences(stops)
                 .modelName(ensureNotNull(model, "model"))

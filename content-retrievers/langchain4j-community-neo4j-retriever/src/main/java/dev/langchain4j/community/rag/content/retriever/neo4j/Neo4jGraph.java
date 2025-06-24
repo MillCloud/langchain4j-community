@@ -16,16 +16,13 @@ import org.neo4j.driver.summary.ResultSummary;
 
 public class Neo4jGraph implements AutoCloseable {
 
-    public record StructuredSchema(
-            List<String> nodesProperties, List<String> relationshipsProperties, List<String> patterns) {}
-
     private final Driver driver;
     private final Long sample;
     private final Long maxRels;
 
-    private StructuredSchema structuredSchema;
+    private String schema;
 
-    public Neo4jGraph(Driver driver, Long sample, Long maxRels) {
+    public Neo4jGraph(final Driver driver, Long sample, Long maxRels) {
 
         this.sample = getOrDefault(sample, 1000L);
         this.maxRels = getOrDefault(maxRels, 100L);
@@ -41,8 +38,8 @@ public class Neo4jGraph implements AutoCloseable {
         }
     }
 
-    public StructuredSchema getStructuredSchema() {
-        return structuredSchema;
+    public String getSchema() {
+        return schema;
     }
 
     public ResultSummary executeWrite(String queryString) {
@@ -72,7 +69,7 @@ public class Neo4jGraph implements AutoCloseable {
     }
 
     public void refreshSchema() {
-        this.structuredSchema = getSchemaFromMetadata(this, sample, maxRels);
+        this.schema = getSchemaFromMetadata(this, sample, maxRels);
     }
 
     @Override

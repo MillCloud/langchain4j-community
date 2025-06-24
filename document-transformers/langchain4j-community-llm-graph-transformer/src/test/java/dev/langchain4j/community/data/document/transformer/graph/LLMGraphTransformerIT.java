@@ -20,13 +20,9 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 class LLMGraphTransformerIT {
-    
-    private static final Logger log = LoggerFactory.getLogger(LLMGraphTransformerIT.class);
 
     private static final String EXAMPLES_PROMPT =
             """
@@ -164,7 +160,7 @@ class LLMGraphTransformerIT {
                 .build();
 
         List<GraphDocument> documents = transformer.transformAll(docs);
-        log.info("documents = {}", documents);
+        System.out.println("documents = " + documents);
         assertThat(documents).hasSize(4);
         String[] strings = {keanu, lino, goku, levi, matrix, vac, db, aot};
         graphDocsAssertions(documents, Stream.of(strings), Stream.of("acted", "acted", "acted", "acted"));
